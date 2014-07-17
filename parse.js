@@ -1,9 +1,57 @@
 /**
  * Changes made for Parse.js to work with Appcelerator Titanium
  */
-function XMLHttpRequest(config) {
-    return Ti.Network.createHTTPClient(config);
-}
+
+var FB = {
+    fbSDK: require('facebook'),
+
+    init: function() {},
+    login: function(callback, options) {
+        var callbackWrapper = function(evt) {
+    		FB.fbSDK.removeEventListener('login', callbackWrapper);
+
+    		if (evt.success) {
+                var response = {
+                    success: true,
+
+                    authResponse: {
+                        userID: FB.fbSDK.uid,
+                        accessToken: FB.fbSDK.accessToken,
+                        expiresIn: 3600
+                    }
+                };
+
+                callback(response);
+
+    		} else if (evt.cancelled) {
+    			callback({error: true});
+    		} else {
+    			callback({error: true});
+    		}
+
+    	};
+
+    	FB.fbSDK.addEventListener('login', callbackWrapper);
+
+    	FB.fbSDK.permissions = options.scope;
+    	FB.fbSDK.forceDialogAuth = false;
+
+    	if (OS_IOS && FB.fbSDK.initialize)
+    		FB.fbSDK.initialize();
+
+    	// If user is loggedin to Facebook, log him/her out first
+    	if (FB.fbSDK.loggedIn) {
+    		Ti.API.info('Already loggedin!');
+
+            callbackWrapper({success: true});
+    	} else {
+    		FB.fbSDK.authorize();
+    	}
+    },
+    logout: function() {},
+    getAuthResponse: function() {}
+};
+// End changes
 
 
 
@@ -9113,4 +9161,6 @@ function XMLHttpRequest(config) {
     });
     return request._thenRunCallbacks(options);
   };
+
+  module.exports = Parse;
 }(this));
